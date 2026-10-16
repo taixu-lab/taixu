@@ -43,6 +43,9 @@ jobs:
       - name: Build TaiXuDev APK
         env:
           TAIXU_DEV_BUILD: "1"
+          # CI 在海外：强制走官方 maven 源。settings.gradle.kts 的 CI=true 推断
+          # 曾失效（AGP 传递依赖打到 aliyun central 404/502），这里显式声明兜底。
+          USE_OFFICIAL_REPOS: "1"
         run: |
           ./gradlew assembleDebug --no-daemon --stacktrace
 

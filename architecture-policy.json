@@ -27,7 +27,8 @@
       "feature.theme", "feature.components", "feature.home", "feature.chat",
       "feature.terminal", "feature.workspace", "feature.workflow", "feature.settings",
       "feature.developer", "feature.custom_iteration", "feature.onboarding",
-      "feature.navigation", "feature.browser", "feature.git", "feature.a2uipoc"
+      "feature.navigation", "feature.browser", "feature.git", "feature.a2uipoc",
+      "feature.manju"
     ]
   },
   "importBans": [
@@ -186,7 +187,7 @@
         "feature.theme", "feature.home", "feature.chat", "feature.terminal",
         "feature.workspace", "feature.workflow", "feature.settings", "feature.developer",
         "feature.custom_iteration", "feature.browser", "feature.git", "feature.a2uipoc",
-        "plugin.ui", "core.datastore"
+        "plugin.ui", "core.datastore", "feature.manju"
       ]
     },
     {
@@ -202,6 +203,12 @@
       "path": "feature/a2uipoc",
       "_doc": "A2UI 渲染器：官方 androidx.a2ui 1.0.0-alpha01 仅允许在本模块使用，对外暴露 A2uiPocSurfaceCard / A2uiPocScreen",
       "requires": ["harness", "feature.theme", "feature.components"]
+    },
+    {
+      "id": "feature.manju",
+      "path": "feature/manju",
+      "_doc": "AI 漫剧制作：剧本→分镜→出图→配音→FFmpeg 合成，经 harness/runtime 接入执行后端",
+      "requires": ["harness", "runtime", "feature.theme", "feature.components", "core.datastore", "core.network"]
     }
   ]
 }

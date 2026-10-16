@@ -5,6 +5,9 @@ import groovy.json.JsonSlurper
 // architectureCheck 解析 architecture-policy.json 需要显式引入（仅构建期，不进入产物）。
 buildscript {
     repositories {
+        // AGP 传递依赖（com.android.tools.*）只存在于 google 仓库，必须列入；
+        // 缺它时这些依赖会落到 aliyun central（无此包，404）。
+        google()
         mavenCentral()
         maven { url = uri("https://maven.aliyun.com/repository/central") }
     }

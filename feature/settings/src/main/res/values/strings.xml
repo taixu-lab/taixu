@@ -109,4 +109,6 @@
     <string name="agent_running_send_mode_steer">引导</string>
     <string name="agent_running_send_mode_queue_description">当前轮仍在执行时，新输入排队等它结束后作为下一轮启动。</string>
     <string name="agent_running_send_mode_steer_description">当前轮仍在执行时，新输入在当前这批工具调用完成后、下一轮推理开始前注入。</string>
+    <string name="settings_feature_manju_title">AI 漫剧</string>
+    <string name="settings_feature_manju_subtitle">剧本拆成分镜 · 逐镜出图 · 配音合成一条短片</string>
 </resources>

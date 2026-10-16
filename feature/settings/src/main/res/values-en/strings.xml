@@ -109,4 +109,6 @@
     <string name="agent_running_send_mode_steer">Steer</string>
     <string name="agent_running_send_mode_queue_description">While the current turn is still running, new input waits and starts as the next turn after it finishes.</string>
     <string name="agent_running_send_mode_steer_description">While the current turn is still running, new input is injected after the current batch of tool calls finishes and before the next inference round.</string>
+    <string name="settings_feature_manju_title">AI Comic Drama</string>
+    <string name="settings_feature_manju_subtitle">Split a script into shots · generate stills · dub and compose a short film</string>
 </resources>

@@ -47,6 +47,7 @@ sealed interface AppDestination : NavKey
 @Serializable data object DeveloperDestination : AppDestination
 @Serializable data object AdbLogcatDestination : AppDestination
 @Serializable data object A2uiPocDestination : AppDestination
+@Serializable data object ManjuDestination : AppDestination
 @Serializable data object FeatureHubDestination : AppDestination
 @Serializable data object CustomIterationDestination : AppDestination
 @Serializable data class TerminalDestination(val toolId: String = "", val project: String = "") : AppDestination

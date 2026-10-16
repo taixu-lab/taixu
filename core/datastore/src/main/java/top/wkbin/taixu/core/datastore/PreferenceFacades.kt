@@ -181,6 +181,8 @@ class AgentPreferences(private val store: SettingsDataStore) {
     val providerModel get() = store.providerModel
     val phoneAgentConfig get() = store.phoneAgentConfig
     suspend fun setPhoneAgentConfig(value: PhoneAgentEndpoint) = store.setPhoneAgentConfig(value)
+    val manjuImageConfig get() = store.manjuImageConfig
+    suspend fun setManjuImageConfig(value: ManjuImageEndpoint) = store.setManjuImageConfig(value)
     val environmentPrivacyMode get() = store.environmentPrivacyMode
     val allPlugins get() = store.allPlugins
     val maxConcurrentAgentTurns get() = store.maxConcurrentAgentTurns

@@ -22,8 +22,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 internal val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 class SettingsDataStore(
-    private val context: Context,
-    private val secretManager: SecretManager,
+    internal val context: Context,
+    internal val secretManager: SecretManager,
 ) {
     internal val appearanceDataStore get() = context.settingsDataStore
     // 工坊 Android/Flutter 工具链覆盖配置。空值表示使用当前套件的标准路径。

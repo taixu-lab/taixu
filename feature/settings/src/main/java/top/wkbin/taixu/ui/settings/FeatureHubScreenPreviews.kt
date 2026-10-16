@@ -8,6 +8,6 @@ import top.wkbin.taixu.ui.components.RuntimePreview
 @Composable
 private fun FeatureHubScreenPreview() {
     RuntimePreview {
-        FeatureHubScreen(onBack = { }, onOpenCustomIteration = { }, onStartRoundtable = { }, onOpenA2uiPoc = { })
+        FeatureHubScreen(onBack = { }, onOpenCustomIteration = { }, onStartRoundtable = { }, onOpenA2uiPoc = { }, onOpenManju = { })
     }
 }

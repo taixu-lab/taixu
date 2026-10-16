@@ -29,6 +29,7 @@ fun FeatureHubScreen(
     onOpenCustomIteration: () -> Unit,
     onStartRoundtable: () -> Unit,
     onOpenA2uiPoc: () -> Unit,
+    onOpenManju: () -> Unit,
     viewModel: FeatureHubViewModel? = previewOrNull { koinViewModel() },
 ) {
     val sentinelState by viewModel?.sentinelState?.collectAsStateWithLifecycle() ?: previewStateOf(top.wkbin.taixu.harness.workflow.SentinelState())
@@ -80,6 +81,15 @@ fun FeatureHubScreen(
                     title = stringResource(R.string.settings_feature_a2ui_title),
                     subtitle = stringResource(R.string.settings_feature_a2ui_subtitle),
                     onClick = onOpenA2uiPoc,
+                )
+            }
+            item {
+                FeatureLinkRow(
+                    icon = RuntimeIconName.Sparkles,
+                    accent = MaterialTheme.colorScheme.primary,
+                    title = stringResource(R.string.settings_feature_manju_title),
+                    subtitle = stringResource(R.string.settings_feature_manju_subtitle),
+                    onClick = onOpenManju,
                 )
             }
         }

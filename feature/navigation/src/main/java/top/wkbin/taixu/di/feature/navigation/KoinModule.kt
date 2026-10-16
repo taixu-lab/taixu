@@ -9,6 +9,7 @@ import top.wkbin.taixu.di.feature.chat.featureChatModule
 import top.wkbin.taixu.di.feature.custom.iteration.featureCustomIterationModule
 import top.wkbin.taixu.di.feature.developer.featureDeveloperModule
 import top.wkbin.taixu.di.feature.git.featureGitModule
+import top.wkbin.taixu.di.feature.manju.featureManjuModule
 import top.wkbin.taixu.di.feature.home.featureHomeModule
 import top.wkbin.taixu.di.feature.settings.featureSettingsModule
 import top.wkbin.taixu.di.feature.terminal.featureTerminalModule
@@ -26,6 +27,7 @@ val navigationModule = module {
         featureCustomIterationModule,
         featureDeveloperModule,
         featureGitModule,
+        featureManjuModule,
         featureHomeModule,
         featureSettingsModule,
         featureTerminalModule,

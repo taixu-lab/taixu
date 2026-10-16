@@ -52,6 +52,7 @@ import top.wkbin.taixu.core.common.navigation.GlobalNavigationBus
 import top.wkbin.taixu.feature.a2uipoc.A2uiPocScreen
 import top.wkbin.taixu.ui.browser.BrowserViewModel
 import top.wkbin.taixu.ui.git.GitScreen
+import top.wkbin.taixu.ui.manju.ManjuScreen
 import top.wkbin.taixu.ui.settings.AboutCommunityScreen
 import top.wkbin.taixu.ui.settings.AgentEcoSettingsScreen
 import top.wkbin.taixu.ui.settings.AgentSettingsCategory
@@ -470,11 +471,7 @@ fun TaiXuNavHost(
                     )
                 }
             }
-            entry<SponsorDestination> {
-                GuardedEntry(SponsorDestination) {
-                    SponsorScreen(onBack = ::popBack)
-                }
-            }
+            entry<SponsorDestination> { GuardedEntry(SponsorDestination) { SponsorScreen(onBack = ::popBack) } }
             entry<DistroManagementDestination> {
                 GuardedEntry(DistroManagementDestination) {
                     DistroManagementScreen(
@@ -635,16 +632,8 @@ fun TaiXuNavHost(
                     )
                 }
             }
-            entry<StatsDestination> {
-                GuardedEntry(StatsDestination) {
-                    StatsScreen(onBack = ::popBack)
-                }
-            }
-            entry<DeveloperDestination> {
-                GuardedEntry(DeveloperDestination) {
-                    DeveloperScreen(onBack = ::popBack)
-                }
-            }
+            entry<StatsDestination> { GuardedEntry(StatsDestination) { StatsScreen(onBack = ::popBack) } }
+            entry<DeveloperDestination> { GuardedEntry(DeveloperDestination) { DeveloperScreen(onBack = ::popBack) } }
             entry<AdbLogcatDestination> {
                 GuardedEntry(AdbLogcatDestination) {
                     AdbLogcatScreen(onBack = ::popBack)
@@ -662,6 +651,7 @@ fun TaiXuNavHost(
                         onOpenCustomIteration = { activeStack.push(FeatureHubDestination, CustomIterationDestination) },
                         onStartRoundtable = { pendingHealingTask = HealingTask(AgentPresets.ROUNDTABLE_TITLE, AgentPresets.ROUNDTABLE_PROMPT); navigateMain(MainDestination.Agent) },
                         onOpenA2uiPoc = { activeStack.push(FeatureHubDestination, A2uiPocDestination) },
+                        onOpenManju = { activeStack.push(FeatureHubDestination, ManjuDestination) },
                     )
                 }
             }
@@ -692,6 +682,9 @@ fun TaiXuNavHost(
                 GuardedEntry(destination) {
                     GitScreen(projectName = destination.projectName, onBack = ::popBack)
                 }
+            }
+            entry<ManjuDestination> {
+                GuardedEntry(ManjuDestination) { ManjuScreen(onBack = ::popBack) }
             }
     }
 
