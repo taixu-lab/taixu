@@ -46,12 +46,12 @@ import top.wkbin.taixu.ui.components.RuntimeIconName
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyListState
-import top.wkbin.taixu.harness.QueuedPrompt
 import top.wkbin.taixu.ui.components.RuntimeComposerTextField
 import top.wkbin.taixu.ui.theme.chatBackdropSurface
 import top.wkbin.taixu.ui.theme.chatSoftDropShadow
 /**
- * 输入区：斜杠/@ 弹窗、排队指令、附件预览、推理强度滑块、工具状态胶囊与一体化输入胶囊。
+ * 输入区：斜杠/@ 弹窗、附件预览、推理强度滑块、工具状态胶囊与一体化输入胶囊。
+ * 排队指令由 [ChatPaneContent] 与 Plan 同级悬浮在输入框上方，避免叠进输入胶囊。
  */
 @Composable
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -76,10 +76,6 @@ internal fun ChatComposer(
     attachmentsProcessing: Boolean,
     onAttachmentsPicked: (List<Uri>, Boolean) -> Unit,
     onRemoveAttachment: (ChatAttachment) -> Unit,
-    queuedPrompts: List<QueuedPrompt>,
-    onEditQueuedPrompt: (QueuedPrompt) -> Unit,
-    onRemoveQueuedPrompt: (QueuedPrompt) -> Unit,
-    onConvertToSteer: (QueuedPrompt) -> Unit,
     knownMentionNames: List<String>,
     attachedMentions: List<MentionItem>,
     onRemoveMention: (MentionItem) -> Unit,
@@ -126,69 +122,64 @@ internal fun ChatComposer(
         }
     }
 
-    // 斜杠指令快捷提示弹窗
-    if (matchingCommands.isNotEmpty()) {
-        SlashCommandPopup(
-            commands = matchingCommands,
-            onSelect = onApplyCommand,
-        )
-    }
-
-    if (matchingMentions.isNotEmpty() && textFieldValue.selection.collapsed && textFieldValue.selection.end == input.length) {
-        MentionPopup(
-            mentions = matchingMentions,
-            onSelect = onApplyMention,
-        )
-    }
-
-    QueuedPromptStack(
-        prompts = queuedPrompts,
-        onEdit = onEditQueuedPrompt,
-        onRemove = onRemoveQueuedPrompt,
-        onConvertToSteer = onConvertToSteer,
-    )
-
-    // 待发送附件预览栏
-    AttachmentPreviewRow(
-        attachments = attachments,
-        onRemove = onRemoveAttachment,
-    )
-
-    // 附件处理中（复制/压缩/编码）加载指示
-    if (attachmentsProcessing) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(14.dp),
-                strokeWidth = 2.dp,
-            )
-            Text(
-                stringResource(R.string.chat_attachment_processing),
-                style = RuntimeTheme.typography.labelSmall,
-                color = RuntimeTheme.colorScheme.onSurfaceVariant,
+    // 父级是 Box；此处必须 Column 纵向排布，否则排队/附件/建议面板会叠在输入胶囊上。
+    Column(Modifier.fillMaxWidth()) {
+        // 斜杠指令快捷提示弹窗
+        if (matchingCommands.isNotEmpty()) {
+            SlashCommandPopup(
+                commands = matchingCommands,
+                onSelect = onApplyCommand,
             )
         }
-    }
-    val composerShape = RuntimeTheme.shapes.extraLargeIncreased
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).chatSoftDropShadow(composerShape),
-        shape = composerShape,
-        color = chatBackdropSurface(RuntimeTheme.colorScheme.surfaceContainer),
-        border = if (running) BorderStroke(1.dp, RuntimeTheme.colorScheme.primary.copy(alpha = 0.5f)) else null,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            // 显式挂载的能力才展示标签；常驻能力从 + 菜单管理。
-            val allDisplayItems = remember(pinnedCapabilities, attachedMentions) {
-                attachedMentions.distinctBy { it.id }
+
+        if (matchingMentions.isNotEmpty() && textFieldValue.selection.collapsed && textFieldValue.selection.end == input.length) {
+            MentionPopup(
+                mentions = matchingMentions,
+                onSelect = onApplyMention,
+            )
+        }
+
+        // 待发送附件预览栏
+        AttachmentPreviewRow(
+            attachments = attachments,
+            onRemove = onRemoveAttachment,
+        )
+
+        // 附件处理中（复制/压缩/编码）加载指示
+        if (attachmentsProcessing) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                )
+                Text(
+                    stringResource(R.string.chat_attachment_processing),
+                    style = RuntimeTheme.typography.labelSmall,
+                    color = RuntimeTheme.colorScheme.onSurfaceVariant,
+                )
             }
+        }
+        val composerShape = RuntimeTheme.shapes.extraLargeIncreased
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).chatSoftDropShadow(composerShape),
+            shape = composerShape,
+            color = chatBackdropSurface(RuntimeTheme.colorScheme.surfaceContainer),
+            border = if (running) BorderStroke(1.dp, RuntimeTheme.colorScheme.primary.copy(alpha = 0.5f)) else null,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                // 显式挂载的能力才展示标签；常驻能力从 + 菜单管理。
+                val allDisplayItems = remember(pinnedCapabilities, attachedMentions) {
+                    attachedMentions.distinctBy { it.id }
+                }
             if (allDisplayItems.isNotEmpty()) {
                 LazyRow(
                     modifier = Modifier
@@ -377,6 +368,7 @@ internal fun ChatComposer(
                             onLongClick = { doSend(onSendWithoutAnswer) },
                         )
                     }
+                }
                 }
             }
         }
