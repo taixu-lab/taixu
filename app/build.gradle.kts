@@ -5,8 +5,8 @@ import java.security.MessageDigest
 import java.util.Properties
 import org.gradle.kotlin.dsl.configure
 
-val appVersionName = "1.11.0"
-val appVersionCode = 51
+val appVersionName = "1.12.0"
+val appVersionCode = 52
 
 // TaiXuDev 双包构建开关：CI（.github/workflows/taixudev-build.yml）设 TAIXU_DEV_BUILD=1 时，
 // 产出独立预览包 top.wkbin.taixu.dev / 应用名 TaiXuDev / 版本后缀 -dev，
@@ -139,6 +139,11 @@ extensions.configure<ApplicationExtension> {
                 "META-INF/notice.txt"
             )
         }
+    }
+
+    androidResources {
+        // 内置 RootFS 是已压缩的 xz 归档，二次压缩只会拖慢打包并增大 APK。
+        noCompress += "xz"
     }
 }
 

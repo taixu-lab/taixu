@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -85,6 +86,8 @@ class BotDetailViewModel(
     val deleted = _deleted.asSharedFlow()
 
     private var boundBotId: String? = null
+    /** bind() 起的一组收集协程；切到另一个 bot 时必须先取消，否则旧 bot 的数据会继续写进同一个 state。 */
+    private var bindJobs: List<Job> = emptyList()
     private val memoryDrafts = mutableMapOf<Pair<String, String>, BotMemoryEditorState>()
 
     internal fun memoryDraft(botId: String, path: String) = memoryDrafts.getOrPut(botId to path) { BotMemoryEditorState() }
@@ -93,26 +96,29 @@ class BotDetailViewModel(
     fun bind(botId: String) {
         if (boundBotId == botId) return
         boundBotId = botId
-        viewModelScope.launch {
-            botRepository.observeBot(botId).collect { bot -> _uiState.update { it.copy(bot = bot) } }
-        }
-        viewModelScope.launch {
-            scheduleRepository.observeForBot(botId).collect { list -> _uiState.update { it.copy(schedules = list) } }
-        }
-        viewModelScope.launch {
-            scheduleRepository.observeDeliveries(botId).collect { list -> _uiState.update { it.copy(deliveries = list) } }
-        }
-        viewModelScope.launch {
-            groupRepository.observeGroups().collect { list -> _uiState.update { it.copy(groups = list) } }
-        }
-        viewModelScope.launch {
-            val files = runCatching { memoryManager.listFiles(botId) }.getOrDefault(emptyList())
-            val commits = runCatching { memoryManager.getCommitHistory(botId) }.getOrDefault(emptyList())
-            val tokens = runCatching { externalRuntime?.listTokens(botId).orEmpty() }.getOrDefault(emptyList())
-            _uiState.update {
-                it.copy(memoryFiles = files, commits = commits, runtimeTokens = tokens, loading = false)
-            }
-        }
+        bindJobs.forEach { it.cancel() }
+        bindJobs = listOf(
+            viewModelScope.launch {
+                botRepository.observeBot(botId).collect { bot -> _uiState.update { it.copy(bot = bot) } }
+            },
+            viewModelScope.launch {
+                scheduleRepository.observeForBot(botId).collect { list -> _uiState.update { it.copy(schedules = list) } }
+            },
+            viewModelScope.launch {
+                scheduleRepository.observeDeliveries(botId).collect { list -> _uiState.update { it.copy(deliveries = list) } }
+            },
+            viewModelScope.launch {
+                groupRepository.observeGroups().collect { list -> _uiState.update { it.copy(groups = list) } }
+            },
+            viewModelScope.launch {
+                val files = runCatching { memoryManager.listFiles(botId) }.getOrDefault(emptyList())
+                val commits = runCatching { memoryManager.getCommitHistory(botId) }.getOrDefault(emptyList())
+                val tokens = runCatching { externalRuntime?.listTokens(botId).orEmpty() }.getOrDefault(emptyList())
+                _uiState.update {
+                    it.copy(memoryFiles = files, commits = commits, runtimeTokens = tokens, loading = false)
+                }
+            },
+        )
     }
 
     fun issueRuntimeToken(label: String, expiresAt: Long? = null) {
@@ -247,15 +253,15 @@ class BotDetailViewModel(
     fun rollback(hash: String) {
         val bot = _uiState.value.bot ?: return
         launchBusy {
-            val result = memoryManager.rollbackToCommit(bot.id, hash)
+            val result = orchestrator.rollbackMemory(bot.id, hash)
             refreshMemory(bot.id)
             "已恢复到 ${hash.take(8)}，恢复前快照 ${result.backupHash.take(8)} 已保留"
         }
     }
 
-    fun exportBot() {
+    fun exportBot(includeHistory: Boolean = true) {
         val bot = _uiState.value.bot ?: return
-        launchBusy { exportBotPackage(context, packageService, bot) }
+        launchBusy { exportBotPackage(context, packageService, bot, includeHistory) }
     }
 
     suspend fun readMemoryDocument(botId: String, path: String) = memoryManager.readDocument(botId, path)
@@ -264,7 +270,7 @@ class BotDetailViewModel(
 
     suspend fun saveMemoryDocument(botId: String, document: BotMemoryDocument, content: String) {
         check(boundBotId == botId && _uiState.value.bot?.id == botId) { "Bot 已切换，未保存" }
-        memoryManager.writeMemory(botId, document.path, content, "memory: 编辑 ${document.path}", document.revision)
+        orchestrator.saveMemoryDocument(botId, document.path, content, document.revision)
         refreshMemory(botId)
     }
 
