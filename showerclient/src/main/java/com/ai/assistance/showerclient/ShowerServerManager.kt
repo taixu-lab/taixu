@@ -83,16 +83,21 @@ object ShowerServerManager {
         runner.run(killCmd, ShellIdentity.DEFAULT)
 
         // 2) 选一个「存在且可写」的工作目录。
-        //    /data/local/tmp 在部分设备上缺失（见 ShowerEnvironment.workDirCandidates 注释），
-        //    旧实现硬编码单目录，缺失时 cp 必败、虚拟屏完全不可用。
-        val workDir = resolveWorkDir(runner)
-        if (workDir == null) {
-            onFailure("Shower 工作目录不可写，已尝试 ${ShowerEnvironment.workDirCandidates}")
-            ShowerLog.e(
-                TAG,
-                "无可用工作目录（已尝试 ${ShowerEnvironment.workDirCandidates}）：检查 Shizuku/Root 授权与 SELinux 限制"
-            )
-            return false
+        //    /data/local/tmp 在部分设备上缺失（见 ShowerEnvironment.workDirCandidates 注释）。
+        //    只有探测命令跑完且没有成功标记，才是目录不可写。
+        //    UserService 启动超时等通道失败必须单独说明，避免误导成目录权限问题。
+        val workDir = when (
+            val selected = selectShowerWorkDir(
+                candidates = ShowerEnvironment.workDirCandidates,
+                onAttempt = ::logWorkDirAttempt,
+            ) { dir -> runner.run(showerWorkDirProbeCommand(dir), ShellIdentity.SHELL) }
+        ) {
+            is ShowerWorkDirStatus.Ready -> selected.path
+            is ShowerWorkDirStatus.Unavailable -> {
+                onFailure(selected.message)
+                ShowerLog.e(TAG, selected.message)
+                return false
+            }
         }
 
         // 3) Remove any stale jar and log in the resolved work dir.
@@ -271,29 +276,18 @@ object ShowerServerManager {
         return result.success
     }
 
-    /**
-     * 按顺序探测第一个「存在且可写」的工作目录；均不可用时返回 null。
-     *
-     * 探测在 **shell 身份下**真实试写一个文件（而非只看 `ls`/`test -d`），
-     * 因为目录存在不代表可写（SELinux 与 UNIX 权限都可能拦）。
-     */
-    private suspend fun resolveWorkDir(runner: ShellRunner): String? {
-        for (dir in ShowerEnvironment.workDirCandidates) {
-            // 先尝试确保目录存在（已是 shell 拥有的目录时 mkdir -p 为幂等空操作）。
-            val probeFile = "$dir/.shower_probe"
-            val cmd = "mkdir -p $dir 2>/dev/null; " +
-                "if touch $probeFile 2>/dev/null; then rm -f $probeFile; echo $SHOWER_WORKDIR_PROBE_MARK; fi"
-            val result = runner.run(cmd, ShellIdentity.SHELL)
-            if (result.success && result.stdout.contains(SHOWER_WORKDIR_PROBE_MARK)) {
-                ShowerLog.d(TAG, "resolveWorkDir: 选用 $dir")
-                return dir
-            }
-            ShowerLog.w(
+    private fun logWorkDirAttempt(dir: String, result: ShellCommandResult, step: ShowerWorkDirStep) {
+        when (step) {
+            is ShowerWorkDirStep.Use -> ShowerLog.d(TAG, "resolveWorkDir: 选用 $dir")
+            ShowerWorkDirStep.TryNext -> ShowerLog.w(
                 TAG,
-                "resolveWorkDir: $dir 不可写（exit=${result.exitCode}），尝试下一个候选"
+                "resolveWorkDir: $dir 不可写（exit=${result.exitCode}），尝试下一个候选",
+            )
+            is ShowerWorkDirStep.ChannelUnavailable -> ShowerLog.w(
+                TAG,
+                "resolveWorkDir: $dir 探测未执行：${step.detail.take(200)}",
             )
         }
-        return null
     }
 
     /** Use app-owned external storage first, then fall back after an actual write failure. */
