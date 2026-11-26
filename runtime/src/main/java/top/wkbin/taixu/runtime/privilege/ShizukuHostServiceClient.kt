@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -98,7 +99,15 @@ class ShizukuHostServiceClient(
         pendingConnection = deferred
         try {
             Shizuku.bindUserService(serviceArgs, connection)
-            return withTimeout(CONNECTION_TIMEOUT_MS) { deferred.await() }
+            try {
+                return withTimeout(CONNECTION_TIMEOUT_MS) { deferred.await() }
+            } catch (timeout: TimeoutCancellationException) {
+                // 用户服务进程在 Application 初始化时崩溃，也会停在这次等待上。
+                throw IllegalStateException(
+                    shizukuUserServiceStartTimeoutMessage(CONNECTION_TIMEOUT_MS),
+                    timeout,
+                )
+            }
         } finally {
             pendingConnection = null
         }
